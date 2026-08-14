@@ -11,11 +11,18 @@
 *.tflite
 *.bin
 *.pkl
-models/
 weights/
 **/weights/
 backend/backend/app/models/weights/
 backend/backend/models/
+
+# Media & Demo videos
+demo_videos/
+*.mp4
+*.avi
+*.mov
+
+
 
 # Datasets & Training Splits
 datasets/
