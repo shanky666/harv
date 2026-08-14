@@ -1,0 +1,32 @@
+name: Orange
+scientific_name: Citrus sinensis
+cnn_model_path: models/orange_quality_ft.h5
+dataset_path: datasets/orange
+varieties_covered:
+  - Valencia (juice oranges)
+  - Navel (eating oranges)
+  - Local Ugandan varieties
+shade_profiles:
+  - orange (ripe)
+  - green_orange (semi-ripe)
+  - green (unripe)
+  - orange_spotted (melanose-affected)
+  - orange_lesions (canker-affected)
+shelf_life_rules:
+  Good: 14
+  Better: 10
+  Medium: 7
+  Reject: 1
+market_rules:
+  Good:
+    market: "Premium Retail"
+    price_range: "₹80-₹120/kg"
+  Better:
+    market: "Supermarket"
+    price_range: "₹60-₹80/kg"
+  Medium:
+    market: "Local Market"
+    price_range: "₹40-₹60/kg"
+  Reject:
+    market: "Processing Industry"
+    price_range: "₹10-₹20/kg"

@@ -1,0 +1,81 @@
+# Environment files
+.env
+.env.*
+
+# AI / ML Models & Weights
+*.keras
+*.h5
+*.pt
+*.pth
+*.onnx
+*.tflite
+*.bin
+*.pkl
+models/
+weights/
+**/weights/
+backend/backend/app/models/weights/
+backend/backend/models/
+
+# Datasets & Training Splits
+datasets/
+dataset-*/
+dataset_*/
+grading_split_*/
+fruit_split/
+fruit_split_cls/
+classifier_split/
+basket_dataset/
+sample_data/
+backend/sample_data/
+"A Citrus Fruits and Leaves Dataset for Detection and Classification of Citrus Diseases through Machine Learning/"
+"Guava Dataset (Original Image)/"
+strawberryDataset/
+A Citrus Fruits*/
+Guava Dataset*/
+
+# Python virtual environments & build
+venv/
+.venv/
+backend/venv/
+
+# Python cache & test output
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs & Temporary output
+*.log
+*.err
+*.tmp
+scratch/
+runs/
+storage/
+backend/storage/
+backend/backend/storage/
+reports/
+
+# Local databases & runtime files
+*.sqlite
+*.sqlite3
+*.db
+*.pid
+backend/backend/server_pid.txt
+
+# Archives
+*.zip
+*.rar
+*.7z
+*.tar.gz
+
+# Django backend & clones
+backend/django_backend/
+harv/
+

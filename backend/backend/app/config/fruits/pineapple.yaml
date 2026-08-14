@@ -1,0 +1,22 @@
+name: Pineapple
+scientific_name: Ananas comosus
+cnn_model_path: models/pineapple_quality_ft.h5
+dataset_path: datasets/pineapple
+shelf_life_rules:
+  Good: 12
+  Better: 8
+  Medium: 4
+  Reject: 1
+market_rules:
+  Good:
+    market: "Export"
+    price_range: "₹90-₹120/kg"
+  Better:
+    market: "Retail"
+    price_range: "₹70-₹90/kg"
+  Medium:
+    market: "Local Market"
+    price_range: "₹40-₹60/kg"
+  Reject:
+    market: "Processing"
+    price_range: "₹15-₹25/kg"

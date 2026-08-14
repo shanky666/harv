@@ -1,0 +1,34 @@
+name: Potato
+scientific_name: Solanum tuberosum
+cnn_model_path: models/potato_quality_ft.h5
+dataset_path: datasets/potato
+varieties_covered:
+  - Russet (brown, netted skin)
+  - Yukon Gold (yellow flesh, thin skin)
+  - Red Potato (red skin, white flesh)
+  - Fingerling (small, elongated)
+  - Purple Potato (purple skin and flesh)
+shade_profiles:
+  - brown (common Russet / standard)
+  - tan (Yukon / light-skinned)
+  - pale_yellow (flesh / peeled)
+  - reddish_brown (Red Potato)
+  - dark_brown (dirt-covered / older)
+shelf_life_rules:
+  Good: 30
+  Better: 20
+  Medium: 14
+  Reject: 3
+market_rules:
+  Good:
+    market: "Wholesale Market"
+    price_range: "₹25-₹40/kg"
+  Better:
+    market: "Retail"
+    price_range: "₹20-₹30/kg"
+  Medium:
+    market: "Local Market"
+    price_range: "₹15-₹25/kg"
+  Reject:
+    market: "Processing Industry"
+    price_range: "₹5-₹10/kg"

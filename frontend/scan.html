@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scan Results — HarvestLenz</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px; }
+    @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
+    .summary-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-glass); }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-row .label { color: var(--text-muted); font-size: 0.85rem; }
+    .summary-row .value { font-weight: 600; }
+    .grade-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 8px; }
+    .grade-bar > div { transition: width 0.5s; }
+    .recommendation-list { list-style: none; }
+    .recommendation-list li { padding: 8px 0; border-bottom: 1px solid var(--border-glass); font-size: 0.9rem; color: var(--text-muted); }
+    .recommendation-list li:last-child { border-bottom: none; }
+    .defect-tag { display: inline-block; padding: 4px 10px; border-radius: 16px; font-size: 0.78rem; margin: 2px; }
+    .defect-tag.warn { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); color: #f59e0b; }
+    .defect-tag.ok { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); color: #22c55e; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-brand"><a href="index.html" style="color:inherit;text-decoration:none;"><span>Harvest</span>Lenz</a></div>
+    <div class="navbar-links">
+      <a href="index.html">Dashboard</a>
+      <button onclick="HarvestLenz.logout();location.href='login.html'" id="authBtn">Sign Out</button>
+    </div>
+  </nav>
+
+  <div class="container" id="mainContent">
+    <div style="text-align:center;padding:48px;"><div class="spinner" style="width:32px;height:32px;"></div><p style="margin-top:12px;color:var(--text-muted);">Loading scan results...</p></div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    const sessionId = qs('id');
+    if (!sessionId) { location.href = 'index.html'; }
+
+    function showProcessing(msg) {
+      document.getElementById('mainContent').innerHTML = `
+        <div style="text-align:center;padding:48px;">
+          <div class="spinner" style="width:32px;height:32px;"></div>
+          <p style="margin-top:12px;color:var(--text-muted);">${msg}</p>
+        </div>`;
+    }
+
+    function showError(msg) {
+      document.getElementById('mainContent').innerHTML = `
+        <div class="empty-state">
+          <div class="icon">&#10060;</div>
+          <p>${msg}</p>
+          <a href="index.html" class="btn btn-outline" style="margin-top:16px;">Back to Dashboard</a>
+        </div>`;
+    }
+
+    async function load() {
+      let data = null;
+      try {
+        data = HarvestLenz.getScan(sessionId);
+      } catch(e) { console.warn('getScan error', e); }
+
+      if (data) {
+        try { render(data); } catch(e) {
+          console.error('Render error:', e);
+          showError('Error displaying results.');
+        }
+        return;
+      }
+
+      showProcessing('Analyzing fruit quality...');
+
+      const POLL_INTERVAL_MS = 1500;
+      const MAX_WAIT_MS = 120000;
+      const startedAt = Date.now();
+
+      while (true) {
+        let statusRes;
+        try {
+          statusRes = await HarvestLenz.getAnalysisStatus(sessionId);
+        } catch (e) {
+          showError('Could not reach the server.');
+          return;
+        }
+
+        if (statusRes.status === 'failed') {
+          showError(`Analysis failed: ${statusRes.error || 'unknown error'}`);
+          return;
+        }
+
+        if (statusRes.status === 'complete' || statusRes.status === 'unknown') {
+          try {
+            data = await HarvestLenz.getAnalysis(sessionId);
+          } catch (e) {
+            showError('Scan not found.');
+            return;
+          }
+          if (data) HarvestLenz.saveScan(data);
+          break;
+        }
+
+        if (Date.now() - startedAt > MAX_WAIT_MS) {
+          showError('Analysis is taking longer than expected.');
+          return;
+        }
+
+        await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
+      }
+
+      if (!data) {
+        showError('Scan not found.');
+        return;
+      }
+      try {
+        render(data);
+      } catch(e) {
+        console.error('Render error:', e);
+        showError('Error displaying results.');
+      }
+    }
+
+    function render(d) {
+      const s = d.summary || {};
+      const fruits = d.fruits || [];
+      const total = d.total_fruits || fruits.length;
+      const imgSrc = d.original_image_path ? `/${d.original_image_path}` : '';
+      const fruitType = d.fruit_type || 'Fruit';
+
+      const gradeColors = { good: '#22c55e', better: '#3b82f6', reject: '#ef4444' };
+      const gradeWidths = {};
+      for (const k of ['good','better','reject']) gradeWidths[k] = total ? ((s[k] || 0) / total * 100) : 0;
+
+      document.getElementById('mainContent').innerHTML = `
+        <div style="margin-bottom:24px;">
+          <a href="index.html" style="font-size:0.85rem;color:var(--text-muted);">&larr; Back to Dashboard</a>
+          <h1 style="font-size:1.5rem;margin-top:8px;">${fruitType.charAt(0).toUpperCase() + fruitType.slice(1)} Quality Analysis</h1>
+          <p style="color:var(--text-muted);font-size:0.85rem;">${formatDate(d.created_at || d.scan_date)} &middot; ${sessionId.slice(0, 8)}</p>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header"><h2>Annotated Image</h2></div>
+            ${imgSrc ? `<div class="annotated-wrap"><img src="${imgSrc}" alt="Annotated"></div>` : '<p style="color:var(--text-muted);">No image available</p>'}
+          </div>
+
+          <div>
+            <div class="card" style="margin-bottom:16px;">
+              <div class="card-header"><h2>Quality Summary</h2></div>
+              <div class="summary-row"><span class="label">Overall Grade</span><span class="value"><span class="badge ${HarvestLenz.gradeClass(d.overall_grade)}">${d.overall_grade || '-'}</span></span></div>
+              <div class="summary-row"><span class="label">Score</span><span class="value">${d.score != null ? d.score.toFixed(1) : '-'}</span></div>
+              <div class="summary-row"><span class="label">Avg Shelf Life</span><span class="value">${d.average_shelf_life || '-'} days</span></div>
+              <div class="grade-bar">
+                <div style="width:${gradeWidths.good}%;background:${gradeColors.good};"></div>
+                <div style="width:${gradeWidths.better}%;background:${gradeColors.better};"></div>
+                <div style="width:${gradeWidths.reject}%;background:${gradeColors.reject};"></div>
+              </div>
+              <div style="display:flex;gap:12px;margin-top:8px;font-size:0.75rem;">
+                <span style="color:${gradeColors.good};">Good ${s.good || 0}</span>
+                ${s.better ? `<span style="color:${gradeColors.better};">Better ${s.better}</span>` : ''}
+                <span style="color:${gradeColors.reject};">Reject ${s.reject || 0}</span>
+              </div>
+            </div>
+
+            <div class="card" style="margin-bottom:16px;">
+              <div class="card-header"><h2>Market & Value</h2></div>
+              <div class="summary-row"><span class="label">Wholesale Value</span><span class="value">\u20B9${(d.total_price || 0).toLocaleString('en-IN')}</span></div>
+              <div class="summary-row"><span class="label">Retail Value</span><span class="value">\u20B9${(d.estimated_selling_price || 0).toLocaleString('en-IN')}</span></div>
+              <div class="summary-row"><span class="label">Recommended Market</span><span class="value">${d.recommended_market || '-'}</span></div>
+              ${d.profit_estimation != null ? `<div class="summary-row"><span class="label">Profit</span><span class="value" style="color:var(--primary);">\u20B9${d.profit_estimation.toLocaleString('en-IN')}</span></div>` : ''}
+            </div>
+
+            ${d.ai_recommendations?.length ? `
+            <div class="card">
+              <div class="card-header"><h2>AI Recommendations</h2></div>
+              <ul class="recommendation-list">${d.ai_recommendations.map(r => `<li>${r}</li>`).join('')}</ul>
+            </div>` : ''}
+          </div>
+        </div>
+
+      `;
+    }
+
+    load();
+  </script>
+</body>
+</html>

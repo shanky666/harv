@@ -1,0 +1,22 @@
+name: Grapes
+scientific_name: Vitis vinifera
+cnn_model_path: models/grapes_quality_ft.h5
+dataset_path: datasets/grapes
+shelf_life_rules:
+  Good: 15
+  Better: 10
+  Medium: 5
+  Reject: 1
+market_rules:
+  Good:
+    market: "Export"
+    price_range: "₹120-₹150/kg"
+  Better:
+    market: "Retail"
+    price_range: "₹90-₹110/kg"
+  Medium:
+    market: "Local Market"
+    price_range: "₹50-₹70/kg"
+  Reject:
+    market: "Winery/Juice"
+    price_range: "₹20-₹35/kg"

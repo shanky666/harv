@@ -1,0 +1,469 @@
+{
+  "info": {
+    "_postman_id": "c85d774f-cfc8-472e-9d2a-c71b12b5e27a",
+    "name": "HarvestLenz API",
+    "description": "Postman Collection for the HarvestLenz AI Fruit Quality Intelligence System API. Includes authentication, image upload, multi-fruit pipeline processing, passports, and quality reports.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"farmer.john@example.com\",\n  \"phone\": \"+919876543210\",\n  \"password\": \"securepassword123\",\n  \"location\": \"Nashik, India\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "User Registered Successfully",
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": \"b1a457df-4f27-46c9-a9a3-c5b6510f6a27\",\n  \"name\": \"John Doe\",\n  \"email\": \"farmer.john@example.com\",\n  \"phone\": \"+919876543210\",\n  \"location\": \"Nashik, India\",\n  \"created_at\": \"2026-06-16T01:42:32.124Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.access_token) {",
+                  "    pm.environment.set(\"authToken\", jsonData.access_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"farmer.john@example.com\",\n  \"password\": \"securepassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Login Successful",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"refresh_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"token_type\": \"bearer\"\n}"
+            },
+            {
+              "name": "Invalid Credentials",
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"detail\": \"Invalid credentials\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Current User Info (Me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": \"b1a457df-4f27-46c9-a9a3-c5b6510f6a27\",\n  \"name\": \"John Doe\",\n  \"email\": \"farmer.john@example.com\",\n  \"phone\": \"+919876543210\",\n  \"location\": \"Nashik, India\",\n  \"created_at\": \"2026-06-16T01:42:32.124Z\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Scan & Processing",
+      "item": [
+        {
+          "name": "Upload Basket Image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.scan_id) {",
+                  "    pm.environment.set(\"lastScanId\", jsonData.scan_id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/scan/upload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "scan",
+                "upload"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Upload Success",
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"scan_id\": \"c8b4f0b2-ae31-4dbb-871d-15ba17ff5bc3\",\n  \"user_id\": \"b1a457df-4f27-46c9-a9a3-c5b6510f6a27\",\n  \"image_path\": \"storage/uploads/original/c8b4f0b2-ae31-4dbb-871d-15ba17ff5bc3.jpg\",\n  \"total_fruits\": 0,\n  \"scan_date\": \"2026-06-16T01:43:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Process Basket Pipeline",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/scan/process/{{lastScanId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "scan",
+                "process",
+                "{{lastScanId}}"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Process Completed Successfully",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"scan_id\": \"c8b4f0b2-ae31-4dbb-871d-15ba17ff5bc3\",\n  \"total_fruits\": 18,\n  \"good\": 10,\n  \"better\": 5,\n  \"medium\": 2,\n  \"reject\": 1,\n  \"average_shelf_life\": \"6.8 days\",\n  \"fruit_distribution\": {\n    \"Mango\": 10,\n    \"Orange\": 5,\n    \"Grapes\": 3\n  },\n  \"markets\": {\n    \"best_market\": \"Local Mandi\",\n    \"expected_price\": \"₹1200 - ₹1500 / basket\",\n    \"alternatives\": [\n      {\n        \"market\": \"Export Center\",\n        \"price\": \"₹2000 - ₹2400 / basket\"\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Quality Report Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/scan/report/{{lastScanId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "scan",
+                "report",
+                "{{lastScanId}}"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"scan_id\": \"c8b4f0b2-ae31-4dbb-871d-15ba17ff5bc3\",\n  \"total_fruits\": 18,\n  \"grades\": {\n    \"good\": 10,\n    \"better\": 5,\n    \"medium\": 2,\n    \"reject\": 1\n  },\n  \"shelf_life\": \"6.8 days\",\n  \"market\": \"Local Mandi\",\n  \"pdf_url\": \"/scan/report/c8b4f0b2-ae31-4dbb-871d-15ba17ff5bc3/pdf\",\n  \"created_at\": \"2026-06-16T01:44:12Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Download PDF Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/scan/report/{{lastScanId}}/pdf",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "scan",
+                "report",
+                "{{lastScanId}}",
+                "pdf"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success (PDF binary data)",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/pdf"
+                }
+              ],
+              "cookie": [],
+              "body": "%PDF-1.4..."
+            }
+          ]
+        },
+        {
+          "name": "Get AI Fruit Passport",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/scan/passport/e9b21a5c-7d9a-4c28-912b-312ab62153cb",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "scan",
+                "passport",
+                "e9b21a5c-7d9a-4c28-912b-312ab62153cb"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"passport_id\": \"df5e8c1b-e538-4b77-9ff5-7aa8e7ff2b38\",\n  \"fruit_id\": \"e9b21a5c-7d9a-4c28-912b-312ab62153cb\",\n  \"fruit_type\": \"Mango\",\n  \"grade\": \"Good\",\n  \"defects\": \"Mild anthracnose spot\",\n  \"shelf_life\": \"8 days\",\n  \"market\": \"Export Hub\",\n  \"created_at\": \"2026-06-16T01:44:15Z\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users Profile",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "profile"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": \"b1a457df-4f27-46c9-a9a3-c5b6510f6a27\",\n  \"name\": \"John Doe\",\n  \"email\": \"farmer.john@example.com\",\n  \"phone\": \"+919876543210\",\n  \"location\": \"Nashik, India\",\n  \"created_at\": \"2026-06-16T01:42:32.124Z\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "lastScanId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

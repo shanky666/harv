@@ -1,0 +1,37 @@
+name: Mango
+scientific_name: Mangifera indica
+cnn_model_path: models/mango_quality_ft.h5
+dataset_path: datasets/mango
+varieties_covered:
+  - Alphonso (golden-yellow, red blush)
+  - Dasheri (green to light yellow)
+  - Langra (green-yellow)
+  - Totapuri (pale yellow, elongated)
+  - Banganapalli (deep orange-yellow)
+  - Kesar (reddish-yellow)
+  - Tommy Atkins (red-green blush)
+shade_profiles:
+  - green (unripe / Dasheri / Langra)
+  - deep_green (raw / unripe Alphonso)
+  - pale_yellow (Totapuri / light variety)
+  - reddish_yellow (Alphonso / Kesar ripe)
+  - orange (fully ripe / Banganapalli)
+  - red_blush (apple mango / Tommy Atkins)
+shelf_life_rules:
+  Good: 7
+  Better: 5
+  Medium: 3
+  Reject: 1
+market_rules:
+  Good:
+    market: "Export"
+    price_range: "₹150-₹200/kg"
+  Better:
+    market: "Supermarket"
+    price_range: "₹100-₹140/kg"
+  Medium:
+    market: "Local Market"
+    price_range: "₹50-₹80/kg"
+  Reject:
+    market: "Processing Industry"
+    price_range: "₹15-₹30/kg"

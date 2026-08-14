@@ -1,0 +1,28 @@
+name: Capsicum
+scientific_name: Capsicum annuum
+cnn_model_path: models/capsicum_quality_ft.h5
+dataset_path: dataset-capsicum/dataset-capsicum
+varieties_covered:
+  - Green bell pepper
+shade_profiles:
+  - green_fresh (firm, glossy)
+  - green_wilted (soft / shriveled)
+  - green_moldy (rotten / stale)
+shelf_life_rules:
+  Good: 7
+  Better: 4
+  Medium: 3
+  Reject: 1
+market_rules:
+  Good:
+    market: "Premium Retail"
+    price_range: "₹60-₹90/kg"
+  Better:
+    market: "Supermarket"
+    price_range: "₹40-₹60/kg"
+  Medium:
+    market: "Local Market"
+    price_range: "₹25-₹40/kg"
+  Reject:
+    market: "Processing Industry"
+    price_range: "₹8-₹15/kg"

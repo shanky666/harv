@@ -1,0 +1,30 @@
+name: Guava
+scientific_name: Psidium guajava
+cnn_model_path: models/guava_quality_ft.h5
+dataset_path: datasets/guava
+varieties_covered:
+  - Local Sindhi
+  - Thadhrami
+  - Riyali
+shade_profiles:
+  - yellow (ripe)
+  - greenish_yellow (mature green)
+  - green (unripe)
+shelf_life_rules:
+  Good: 7
+  Better: 5
+  Medium: 3
+  Reject: 1
+market_rules:
+  Good:
+    market: "Premium Retail"
+    price_range: "₹60-₹100/kg"
+  Better:
+    market: "Supermarket"
+    price_range: "₹40-₹60/kg"
+  Medium:
+    market: "Local Market"
+    price_range: "₹25-₹40/kg"
+  Reject:
+    market: "Processing Industry"
+    price_range: "₹8-₹15/kg"

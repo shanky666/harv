@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HarvestLenz — Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-brand"><span>Harvest</span>Lenz</div>
+    <div class="navbar-links">
+      <span id="userGreeting" style="color:var(--text-muted);font-size:0.85rem;margin-right:8px;"></span>
+      <button onclick="location.href='login.html'" id="authBtn">Sign In</button>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card"><div class="stat-value" id="statScans">0</div><div class="stat-label">Total Scans</div></div>
+      <div class="stat-card"><div class="stat-value" id="statFruits">0</div><div class="stat-label">Fruits Analyzed</div></div>
+      <div class="stat-card"><div class="stat-value" id="statGood">0%</div><div class="stat-label">Good Rate</div></div>
+      <div class="stat-card"><div class="stat-value" id="statValue">-</div><div class="stat-label">Est. Total Value</div></div>
+    </div>
+
+    <div class="card" style="margin-bottom:32px;">
+      <div class="card-header"><h2>Analyze Fruit Quality</h2></div>
+
+      <!-- Step 1: Select Fruit -->
+      <div style="max-width:520px;margin:0 auto 20px;">
+        <label class="form-label">Step 1: Select Fruit Type</label>
+        <select id="fruitSelect" class="form-group-select">
+          <option value="" disabled selected>Choose a fruit or vegetable...</option>
+          <optgroup label="&#127793; Fruits">
+            <option value="mango">Mango</option>
+            <option value="pineapple">Pineapple</option>
+            <option value="grapes">Grapes</option>
+            <option value="pomegranate">Pomegranate</option>
+            <option value="orange">Orange</option>
+            <option value="guava">Guava</option>
+            <option value="kiwi">Kiwi</option>
+            <option value="watermelon">Watermelon</option>
+            <option value="banana">Banana</option>
+            <option value="cocoa">Cocoa</option>
+            <option value="coffee">Coffee</option>
+            <option value="strawberry">Strawberry</option>
+            <option value="plum">African Plum</option>
+            <option value="peach">Peach</option>
+            <option value="pear">Pear</option>
+          </optgroup>
+          <optgroup label="&#129381; Vegetables">
+            <option value="carrot">Carrot</option>
+            <option value="tomato">Tomato</option>
+            <option value="cucumber">Cucumber</option>
+            <option value="capsicum">Capsicum</option>
+            <option value="onion">Onion</option>
+            <option value="potato">Potato</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <!-- Step 2: Select Mode -->
+      <div style="max-width:520px;margin:0 auto 20px;">
+        <label class="form-label">Step 2: Select Mode</label>
+        <div style="display:flex;gap:12px;">
+          <button class="mode-btn active" id="modeBasket" onclick="setMode(false)">
+            <span style="font-size:1.4rem;">&#127820;</span>
+            <span>Basket</span>
+            <span style="font-size:0.75rem;color:var(--text-muted);">Multiple fruits</span>
+          </button>
+          <button class="mode-btn" id="modeSingle" onclick="setMode(true)">
+            <span style="font-size:1.4rem;">&#127822;</span>
+            <span>Single Fruit</span>
+            <span style="font-size:0.75rem;color:var(--text-muted);">One fruit</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 3: Upload Image -->
+      <div style="max-width:520px;margin:0 auto 20px;">
+        <label class="form-label">Step 3: Upload Image</label>
+        <div class="upload-zone" id="uploadZone">
+          <div class="upload-icon">&#127820;</div>
+          <h3>Drop an image here</h3>
+          <p>or click to browse &middot; JPG, PNG, WEBP</p>
+          <img class="upload-preview" id="previewImg" alt="Preview">
+          <input type="file" id="fileInput" accept="image/*" hidden>
+        </div>
+      </div>
+
+      <!-- Tip -->
+      <div style="max-width:520px;margin:0 auto 16px;padding:12px 16px;background:rgba(255,235,59,0.08);border:1px solid rgba(255,235,59,0.25);border-radius:10px;font-size:0.82rem;color:var(--text-muted);display:flex;align-items:flex-start;gap:10px;line-height:1.45;">
+        <span style="font-size:1.1rem;flex-shrink:0;margin-top:1px;">&#9728;&#65039;</span>
+        <span><strong style="color:#facc15;">Tip:</strong> For best results, take photos under <strong>natural daylight</strong> and <strong>avoid using flash</strong>. Flash creates glare and washed-out colors that reduce grading accuracy.</span>
+      </div>
+
+      <!-- Step 4: Analyze -->
+      <div style="max-width:520px;margin:0 auto;display:flex;justify-content:center;">
+        <button class="btn btn-primary btn-analyze" id="analyzeBtn" disabled>Analyze</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h2>Recent Scans</h2></div>
+      <div id="scanList" class="scan-list">
+        <div class="empty-state"><div class="icon">&#128203;</div><p>No scans yet. Upload a fruit image to get started.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    let selectedFile = null;
+    let isSingleMode = true;
+
+    function updateAuthUI() {
+      const user = HarvestLenz.user;
+      if (user) {
+        document.getElementById('userGreeting').textContent = user.name || user.email;
+        document.getElementById('authBtn').textContent = 'Sign Out';
+        document.getElementById('authBtn').onclick = () => { HarvestLenz.logout(); location.reload(); };
+      }
+    }
+    updateAuthUI();
+
+    function setMode(single) {
+      isSingleMode = single;
+      document.getElementById('modeBasket').classList.toggle('active', !single);
+      document.getElementById('modeSingle').classList.toggle('active', single);
+      updateAnalyzeBtn();
+    }
+
+    function updateAnalyzeBtn() {
+      const fruit = document.getElementById('fruitSelect').value;
+      const hasFile = selectedFile !== null;
+      document.getElementById('analyzeBtn').disabled = !(fruit && hasFile);
+    }
+
+    const fruitSelect = document.getElementById('fruitSelect');
+    const savedFruit = localStorage.getItem('harvestlenz_fruit');
+    if (savedFruit && [...fruitSelect.options].some(o => o.value === savedFruit)) {
+      fruitSelect.value = savedFruit;
+    }
+    fruitSelect.addEventListener('change', () => {
+      localStorage.setItem('harvestlenz_fruit', fruitSelect.value);
+      updateAnalyzeBtn();
+    });
+
+    const zone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('fileInput');
+    const preview = document.getElementById('previewImg');
+
+    zone.onclick = () => fileInput.click();
+    zone.ondragover = (e) => { e.preventDefault(); zone.classList.add('drag-over'); };
+    zone.ondragleave = () => zone.classList.remove('drag-over');
+    zone.ondrop = (e) => { e.preventDefault(); zone.classList.remove('drag-over'); handleFile(e.dataTransfer.files[0]); };
+    fileInput.onchange = (e) => handleFile(e.target.files[0]);
+
+    function handleFile(file) {
+      if (!file || !file.type.startsWith('image/')) return;
+      selectedFile = file;
+      preview.src = URL.createObjectURL(file);
+      preview.style.display = 'block';
+      updateAnalyzeBtn();
+    }
+
+    document.getElementById('analyzeBtn').onclick = async () => {
+      if (!selectedFile) return;
+      const fruitType = document.getElementById('fruitSelect').value;
+      if (!fruitType) {
+        toast('Please select a fruit type', 'error');
+        return;
+      }
+      showLoading('Uploading...');
+      try {
+        const result = await HarvestLenz.analyzeFruit(selectedFile, fruitType, isSingleMode);
+        location.href = `scan.html?id=${result.session_id}`;
+      } catch (err) {
+        toast(err.message, 'error');
+        hideLoading();
+      }
+    };
+
+    function renderScans() {
+      const scans = HarvestLenz.scans;
+      const el = document.getElementById('scanList');
+      if (!scans.length) {
+        el.innerHTML = '<div class="empty-state"><div class="icon">&#128203;</div><p>No scans yet. Upload a fruit image to get started.</p></div>';
+        return;
+      }
+      el.innerHTML = scans.map(s => {
+        const t = s.total_fruits || 0;
+        const grade = s.overall_grade || 'N/A';
+        const imgSrc = s.original_image_path ? `/${s.original_image_path}` : '';
+        const fruitType = s.fruit_type || 'fruit';
+        return `
+          <div class="scan-item" onclick="location.href='scan.html?id=${s.session_id}'">
+            ${imgSrc ? `<img src="${imgSrc}" alt="">` : '<div style="width:64px;height:64px;background:#1a1a1a;border-radius:10px;"></div>'}
+            <div class="scan-item-info">
+              <h4>${fruitType.charAt(0).toUpperCase() + fruitType.slice(1)} &middot; ${t} fruit${t !== 1 ? 's' : ''}</h4>
+              <p>${formatDate(s.created_at || s.session_date)}</p>
+            </div>
+            <span class="badge ${HarvestLenz.gradeClass(grade)}">${grade}</span>
+          </div>`;
+      }).join('');
+    }
+    renderScans();
+
+    async function loadStats() {
+      try {
+        const res = await fetch(`${window.location.origin}/stats`);
+        if (!res.ok) return;
+        const s = await res.json();
+        document.getElementById('statScans').textContent = s.total_scans || 0;
+        document.getElementById('statFruits').textContent = s.total_fruits || 0;
+        document.getElementById('statGood').textContent = (s.good_rate || 0) + '%';
+        document.getElementById('statValue').textContent = s.total_value ? '\u20B9' + s.total_value.toLocaleString('en-IN') : '-';
+      } catch {}
+    }
+    loadStats();
+  </script>
+</body>
+</html>

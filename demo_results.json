@@ -1,0 +1,67 @@
+[
+  {
+    "fruit": "mango",
+    "image": "mango3.jpg",
+    "grade": "Good",
+    "conf": 0.9833,
+    "defect": 0.2256,
+    "defects": [
+      "shape_deformation"
+    ],
+    "shelf_life_days": 5,
+    "market": "Export",
+    "price": "\u20b9150-\u20b9200/kg"
+  },
+  {
+    "fruit": "pineapple",
+    "image": "pine3.jpg",
+    "grade": "Good",
+    "conf": 0.9995,
+    "defect": 0.0654,
+    "defects": [
+      "minor_spots"
+    ],
+    "shelf_life_days": 11,
+    "market": "Export",
+    "price": "\u20b990-\u20b9120/kg"
+  },
+  {
+    "fruit": "grapes",
+    "image": "grape2.jpg",
+    "grade": "Good",
+    "conf": 0.9879,
+    "defect": 0.5148,
+    "defects": [
+      "severe_rot_or_bruising"
+    ],
+    "shelf_life_days": 7,
+    "market": "Export",
+    "price": "\u20b9120-\u20b9150/kg"
+  },
+  {
+    "fruit": "pomegranate",
+    "image": "pom_plain.jpg",
+    "grade": "Good",
+    "conf": 0.75,
+    "defect": 0.0372,
+    "defects": [
+      "minor_spots"
+    ],
+    "shelf_life_days": 28,
+    "market": "Export",
+    "price": "\u20b9180-\u20b9220/kg"
+  },
+  {
+    "fruit": "pomegranate",
+    "image": "pom_rot_spotty.jpg",
+    "grade": "Reject",
+    "conf": 0.7,
+    "defect": 0.9168,
+    "defects": [
+      "severe_rot_or_bruising"
+    ],
+    "shelf_life_days": 1,
+    "market": "Juice Industry",
+    "price": "\u20b920-\u20b945/kg"
+  }
+]

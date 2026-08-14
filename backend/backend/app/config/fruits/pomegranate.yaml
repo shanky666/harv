@@ -1,0 +1,22 @@
+name: Pomegranate
+scientific_name: Punica granatum
+cnn_model_path: models/pomegranate_quality_ft.h5
+dataset_path: datasets/pomegranate
+shelf_life_rules:
+  Good: 30
+  Better: 20
+  Medium: 10
+  Reject: 3
+market_rules:
+  Good:
+    market: "Export"
+    price_range: "₹180-₹220/kg"
+  Better:
+    market: "Retail"
+    price_range: "₹120-₹160/kg"
+  Medium:
+    market: "Local Market"
+    price_range: "₹70-₹100/kg"
+  Reject:
+    market: "Juice Industry"
+    price_range: "₹20-₹45/kg"

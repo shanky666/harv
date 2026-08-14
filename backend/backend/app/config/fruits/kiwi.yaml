@@ -1,0 +1,28 @@
+name: Kiwi
+scientific_name: Actinidia deliciosa
+cnn_model_path: models/kiwi_quality_ft.h5
+dataset_path: datasets/kiwi
+varieties_covered:
+  - Hayward
+shade_profiles:
+  - brown_fresh (firm, intact skin)
+  - brown_soft (overripe / shriveled)
+  - brown_moldy (rotten)
+shelf_life_rules:
+  Good: 10
+  Better: 7
+  Medium: 4
+  Reject: 1
+market_rules:
+  Good:
+    market: "Premium Retail"
+    price_range: "₹120-₹180/kg"
+  Better:
+    market: "Supermarket"
+    price_range: "₹90-₹120/kg"
+  Medium:
+    market: "Local Market"
+    price_range: "₹60-₹90/kg"
+  Reject:
+    market: "Processing Industry"
+    price_range: "₹15-₹30/kg"
