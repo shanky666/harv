@@ -2,27 +2,11 @@
 .env
 .env.*
 
-# AI / ML Models & Weights
-*.keras
-*.h5
-*.pt
-*.pth
-*.onnx
-*.tflite
-*.bin
-*.pkl
-weights/
-**/weights/
-backend/backend/app/models/weights/
-backend/backend/models/
-
 # Media & Demo videos
 demo_videos/
 *.mp4
 *.avi
 *.mov
-
-
 
 # Datasets & Training Splits
 datasets/
@@ -40,6 +24,9 @@ backend/sample_data/
 strawberryDataset/
 A Citrus Fruits*/
 Guava Dataset*/
+Banana/
+**/fruit_split/
+**/grading_split_*/
 
 # Python virtual environments & build
 venv/

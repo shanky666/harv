@@ -30,7 +30,7 @@ SUPPORTED_VEGETABLES = ["carrot", "tomato", "onion", "cucumber", "capsicum", "po
 async def analyze_fruit(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
-    fruit_type: str = Query(..., description="Fruit type: mango, pineapple, grapes, pomegranate, potato"),
+    fruit_type: str = Query(..., description="Fruit/veg type: mango, pineapple, grapes, pomegranate, banana, orange, guava, etc."),
     is_single: bool = Query(True, description="True for single fruit, False for basket"),
     db: AsyncSession = Depends(get_db),
 ):

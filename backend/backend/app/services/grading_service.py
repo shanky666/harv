@@ -21,7 +21,7 @@ from app.models.shared_mobilenet import (
 )
 from app.models.model_loader import load_grading_model, get_weight_path
 
-DEFECT_OVERRIDE_DISABLED = {"orange", "guava", "kiwi", "potato", "cocoa", "coffee", "strawberry", "plum", "peach", "pear"}
+DEFECT_OVERRIDE_DISABLED = {"orange", "guava", "kiwi", "banana", "potato", "cocoa", "coffee", "strawberry", "plum", "peach", "pear"}
 
 FRUIT_V_THRESHOLDS = {
     "mango": 40,
@@ -29,6 +29,7 @@ FRUIT_V_THRESHOLDS = {
     "pineapple": 60,
     "grapes": 45,
     "potato": 55,
+    "banana": 45,
 }
 
 

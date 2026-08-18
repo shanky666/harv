@@ -4,7 +4,10 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report, confusion_matrix
-import seaborn as sns
+try:
+    import seaborn as sns
+except ImportError:
+    sns = None
 from loguru import logger
 import shutil
 
@@ -30,7 +33,8 @@ def prepare_grading_dataset(fruit_name, base_dir="grading_split"):
         "grapes": ["dataset-grapes", "grapes"],
         "mango": ["dataset_mango", "mango", "dataset-mango"],
         "pineapple": ["dataset-pineapple", "pineapple"],
-        "pomegranate": ["dataset-pomegranate", "pomegranate"]
+        "pomegranate": ["dataset-pomegranate", "pomegranate"],
+        "banana": ["Banana", "dataset-banana", "dataset_banana"]
     }
 
     dummy_names = {
@@ -58,28 +62,51 @@ def prepare_grading_dataset(fruit_name, base_dir="grading_split"):
 
     possible_folders = source_dirs.get(fruit_name, [f"dataset_{fruit_name}", f"dataset-{fruit_name}", fruit_name])
     
+    subfolder_candidates = {
+        "Better": ["Better", "Banana_Good", "Banana"],
+        "Good": ["Good", "Banana_Good", "good"],
+        "Reject": ["Reject", "Banana_Bad", "bad"]
+    }
+
     for cls in CLASSES:
         all_images = []
+        candidates = subfolder_candidates.get(cls, [cls])
         for folder_name in possible_folders:
             actual_dir = find_dataset_dir(folder_name)
             if not actual_dir:
                 continue
             
-            # Check if nested
-            if os.path.isdir(os.path.join(actual_dir, folder_name)):
-                actual_dir = os.path.join(actual_dir, folder_name)
-                
             logger.info(f"Found folder '{folder_name}' at '{actual_dir}'")
-            sub_path = os.path.join(actual_dir, cls)
-            if not os.path.isdir(sub_path):
-                continue
-            for fname in os.listdir(sub_path):
-                if fname.lower() in dummy_names:
+            possible_roots_for_cand = [actual_dir]
+            if os.path.isdir(os.path.join(actual_dir, folder_name)):
+                possible_roots_for_cand.append(os.path.join(actual_dir, folder_name))
+                
+            for cand in candidates:
+                sub_path = None
+                for root_cand in possible_roots_for_cand:
+                    test_p = os.path.join(root_cand, cand)
+                    if os.path.isdir(test_p):
+                        sub_path = test_p
+                        break
+                if not sub_path:
                     continue
-                if fname.lower().startswith("aug_") or "synthetic" in fname.lower() or "fake" in fname.lower():
-                    continue
-                if fname.lower().endswith((".jpg", ".jpeg", ".png")):
-                    all_images.append(os.path.join(sub_path, fname))
+                imgs = []
+                for fname in os.listdir(sub_path):
+                    if fname.lower() in dummy_names:
+                        continue
+                    if fname.lower().startswith("aug_") or "synthetic" in fname.lower() or "fake" in fname.lower():
+                        continue
+                    if fname.lower().endswith((".jpg", ".jpeg", ".png")):
+                        imgs.append(os.path.join(sub_path, fname))
+                if cand == "Banana_Good" and fruit_name == "banana":
+                    # Split Banana_Good between Better and Good
+                    imgs = sorted(imgs)
+                    if cls == "Good":
+                        all_images.extend(imgs[:len(imgs)//2])
+                    elif cls == "Better":
+                        all_images.extend(imgs[len(imgs)//2:])
+                else:
+                    all_images.extend(imgs)
 
         all_images = list(set([os.path.abspath(p) for p in all_images]))
         logger.info(f"Found {len(all_images)} real images for class '{cls}' of fruit '{fruit_name}'")
@@ -314,8 +341,8 @@ def train_pipeline_for_fruit(fruit_name, epochs=15, batch_size=16):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Train fruit quality grading models.")
-    parser.add_argument("--fruits", nargs="+", default=["mango", "grapes", "pineapple", "pomegranate"],
-                        help="Fruits to train (e.g. --fruits mango pomegranate)")
+    parser.add_argument("--fruits", nargs="+", default=["mango", "grapes", "pineapple", "pomegranate", "banana"],
+                        help="Fruits to train (e.g. --fruits mango pomegranate banana)")
     parser.add_argument("--epochs", type=int, default=15, help="Total epochs per fruit")
     args = parser.parse_args()
     for fruit in args.fruits:

@@ -1,0 +1,36 @@
+name: Banana
+scientific_name: Musa acuminata
+cnn_model_path: models/banana_quality_ft.h5
+dataset_path: datasets/banana
+varieties_covered:
+  - Cavendish (standard commercial variety)
+  - Grand Naine (bright yellow, smooth skin)
+  - Robusta (thick skin, medium size)
+  - Rasthali (sweet yellow variety)
+  - Poovan (pale yellow, small to medium)
+  - Red Banana (red-purple skin, sweet)
+  - Nendran (large plantain variety)
+shade_profiles:
+  - green (unripe)
+  - turning_yellow (semi-ripe)
+  - golden_yellow (fully ripe)
+  - spotted_yellow (ripe with sugar spots)
+  - brown_black (overripe / defective)
+shelf_life_rules:
+  Good: 7
+  Better: 5
+  Medium: 3
+  Reject: 1
+market_rules:
+  Good:
+    market: "Premium Retail"
+    price_range: "₹40-₹60/kg"
+  Better:
+    market: "Supermarket"
+    price_range: "₹30-₹40/kg"
+  Medium:
+    market: "Local Market"
+    price_range: "₹20-₹30/kg"
+  Reject:
+    market: "Processing Industry"
+    price_range: "₹5-₹12/kg"
