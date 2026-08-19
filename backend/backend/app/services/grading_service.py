@@ -103,6 +103,22 @@ class GradingService:
         fruit_key = fruit_type.lower().strip()
         predicted_at = datetime.utcnow().isoformat() + "Z"
 
+        # Pre-Verification: Check if uploaded crop matches expected fruit type
+        from app.services.classification_service import classification_service
+        verification = classification_service.verify_fruit(crop_bgr, fruit_key)
+        if not verification["is_match"]:
+            logger.warning(f"Fruit type mismatch for {fruit_key}: {verification['warning']}")
+            return {
+                "grade": "Mismatch",
+                "confidence": verification["confidence"],
+                "defect_score": 1.0,
+                "defects": ["fruit_type_mismatch"],
+                "predicted_at": predicted_at,
+                "warning": verification["warning"],
+                "error": verification["warning"],
+                "detected_fruit": verification["predicted_fruit"],
+            }
+
         features = self._extract_features(crop_bgr, fruit_key)
         defect_score = features["defect_score"]
         defects = features["visible_defects"]
@@ -203,11 +219,26 @@ class GradingService:
         valid_items = []
         features_by_id = {}
 
+        from app.services.classification_service import classification_service
+
         for item in items:
             crop_bgr = item.get("crop_bgr")
             fid = item.get("fruit_id", "")
             if crop_bgr is None or crop_bgr.size == 0:
                 logger.warning(f"Skipping empty crop for {fid}")
+                continue
+            verification = classification_service.verify_fruit(crop_bgr, fruit_key)
+            if not verification["is_match"]:
+                results[fid] = {
+                    "grade": "Mismatch",
+                    "confidence": verification["confidence"],
+                    "defect_score": 1.0,
+                    "defects": ["fruit_type_mismatch"],
+                    "predicted_at": predicted_at,
+                    "warning": verification["warning"],
+                    "error": verification["warning"],
+                    "detected_fruit": verification["predicted_fruit"],
+                }
                 continue
             features_by_id[fid] = self._extract_features(crop_bgr, fruit_key)
             valid_items.append(item)

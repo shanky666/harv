@@ -209,23 +209,16 @@ class AnalysisOrchestrator:
             grade_lower = grade.lower()
             defect_score = grade_res.get("defect_score", 0.0)
 
-            shelf_info = shelf_service.predict_shelf_life(
-                fruit_type, grade, defect_score
-            )
-            market_info = market_service.recommend_market(
-                fruit_type, grade, defect_score
-            )
-
-            base_price = BASE_PRICES.get(fruit_key, 50.0)
-            multiplier = QUALITY_MULTIPLIERS.get(grade, 0.75)
-            fruit_price = round(base_price * multiplier, 2)
-
-            if grade_lower in summary:
+            if grade == "Mismatch":
+                summary["reject"] = summary.get("reject", 0) + 1
+                grade_color = "#E53935"
+            elif grade_lower in summary:
                 summary[grade_lower] += 1
-
-            grade_color = "#66BB6A" if grade == "Good" else (
-                "#FFB74D" if grade == "Better" else "#E57373"
-            )
+                grade_color = "#66BB6A" if grade == "Good" else (
+                    "#FFB74D" if grade == "Better" else "#E57373"
+                )
+            else:
+                grade_color = "#E57373"
 
             rel_crop_path = f"storage/crops/{session_id}/{fid}.jpg"
 
