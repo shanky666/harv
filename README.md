@@ -7,29 +7,36 @@ Fruit quality grading system using computer vision and deep learning. Segments i
 ```
 User selects fruit type (dropdown)
   -> Upload image
+  -> Fruit Type Verification (ClassificationService: Pre-check to prevent fruit mismatch)
   -> OpenCV segmentation (watershed + contour analysis)
   -> Background removal (mask-based crop extraction)
-  -> MobileNetV2 grading (per-fruit independent models)
+  -> MobileNetV2 / EfficientNet grading (per-fruit independent models)
   -> Shelf life + market recommendation
   -> Persist to SQLite
   -> Dashboard report
 ```
 
-### Key Design Decisions
+### Key Features & Design Decisions
 
-- **No ML detector** for fruit detection — uses classical OpenCV (HSV thresholds + watershed + contour analysis)
-- **No fruit classification** — user selects fruit from dropdown, so 4 independent binary classifiers
-- **3-class grading**: Better / Good / Reject (alphabetical for TensorFlow class ordering)
-- **Background task** — `/analyze` returns immediately with session_id, grading runs async
+- **Fruit Verification & Mismatch Protection** — Automatically checks uploaded crops against deep learning classifier models and OpenCV visual feature profiles (HSV color, skin texture, aspect ratio) to catch user dropdown mismatches (e.g., uploading a Pineapple when Grapes is selected).
+- **Per-Fruit Dedicated Models** — Independent fine-tuned model weight files for maximum grading precision.
+- **3-Class Fruit & 2-Class Vegetable Grading**: Better / Good / Reject for fruits, Good / Reject for vegetables.
+- **Background Async Job Processing** — `/analyze` returns immediately with `session_id` while analysis runs asynchronously.
 
-## Supported Fruits
+## Supported Fruits & Model Weights
 
-| Fruit | Model |
-|-------|-------|
-| Mango | MobileNetV2 |
-| Pineapple | MobileNetV2 |
-| Grapes | MobileNetV2 |
-| Pomegranate | MobileNetV2 |
+See [`MODEL_PATHS.md`](MODEL_PATHS.md) for full model paths, file sizes, formats, and search resolution details.
+
+| Fruit | Model Weight File | Format |
+|:---|:---|:---|
+| **Banana** | `backend/backend/app/models/weights/banana.h5` | HDF5 (`.h5`) |
+| **Grapes** | `backend/backend/app/models/weights/grapes.keras` | Keras Native (`.keras`) |
+| **Guava** | `backend/backend/app/models/weights/guava.keras` / `guava.h5` | Keras Native / HDF5 |
+| **Mango** | `backend/backend/app/models/weights/mango.keras` | Keras Native (`.keras`) |
+| **Orange** | `backend/backend/app/models/weights/orange.keras` / `orange.h5` | Keras Native / HDF5 |
+| **Pineapple** | `backend/backend/app/models/weights/pineapple.keras` | Keras Native (`.keras`) |
+| **Pomegranate** | `backend/backend/app/models/weights/pomegranate.keras` | Keras Native (`.keras`) |
+| **Strawberry** | `backend/backend/app/models/weights/strawberry.keras` / `strawberry.h5` | Keras Native / HDF5 |
 
 ## Project Structure
 
