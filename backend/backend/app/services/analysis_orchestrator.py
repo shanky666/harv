@@ -22,6 +22,7 @@ from app.services.grading_service import grading_service
 from app.services.vegetable_grading_service import vegetable_grading_service
 from app.services.shelf_service import shelf_service
 from app.services.market_service import market_service
+from app.services.classification_service import classification_service
 
 BASE_PRICES = {
     "mango": 52.50,
@@ -131,6 +132,14 @@ class AnalysisOrchestrator:
         if image is None:
             raise ValueError(f"Cannot read image: {image_path}")
 
+        # Handle "auto" fruit type detection
+        if fruit_key == "auto":
+            auto_classification = classification_service.classify_fruit(image)
+            detected = auto_classification.get("fruit_type", "mango")
+            fruit_type = detected if detected != "unknown" else "mango"
+            fruit_key = fruit_type.lower().strip()
+            logger.info(f"Auto-classified fruit type as: '{fruit_type}'")
+
         h_img, w_img = image.shape[:2]
 
         seg_start = time.time()
@@ -175,6 +184,23 @@ class AnalysisOrchestrator:
         crop_time = time.time() - crop_start
         logger.info(f"Crop extraction: {len(crops_data)} crops in {crop_time:.2f}s")
 
+        # --- Fruit Mismatch Verification ---
+        # Verify each crop matches the selected fruit type before grading.
+        mismatch_fruit_ids: set = set()
+        mismatch_warning: Optional[str] = None
+        for cd in crops_data:
+            verification = classification_service.verify_fruit(
+                cd["crop_bgr"], fruit_type
+            )
+            if not verification["is_match"]:
+                mismatch_fruit_ids.add(cd["fruit_id"])
+                mismatch_warning = verification.get("warning")
+                logger.warning(
+                    f"Fruit mismatch for crop {cd['fruit_id']}: "
+                    f"expected={fruit_type}, detected={verification['predicted_fruit']} "
+                    f"(conf={verification['confidence']:.2f})"
+                )
+
         grade_start = time.time()
         grade_items = [
             {"fruit_id": cd["fruit_id"], "crop_bgr": cd["crop_bgr"]}
@@ -186,6 +212,14 @@ class AnalysisOrchestrator:
         grade_results = _grading_svc.grade_batch(grade_items, fruit_type)
         grade_time = time.time() - grade_start
         logger.info(f"Grading completed in {grade_time:.2f}s")
+
+        # Override grade to "Mismatch" for mismatched crops
+        for fid in mismatch_fruit_ids:
+            if fid in grade_results:
+                grade_results[fid]["grade"] = "Mismatch"
+                grade_results[fid]["confidence"] = 1.0
+            else:
+                grade_results[fid] = {"grade": "Mismatch", "confidence": 1.0, "defect_score": 0.0, "defects": []}
 
         fruits_data = []
         summary = {"good": 0, "better": 0, "reject": 0}
@@ -212,13 +246,31 @@ class AnalysisOrchestrator:
             if grade == "Mismatch":
                 summary["reject"] = summary.get("reject", 0) + 1
                 grade_color = "#E53935"
-            elif grade_lower in summary:
-                summary[grade_lower] += 1
-                grade_color = "#66BB6A" if grade == "Good" else (
-                    "#FFB74D" if grade == "Better" else "#E57373"
-                )
+                shelf_life_days = 0
+                shelf_str = "0 days (Mismatch)"
+                market_rec_str = "N/A - Fruit Mismatch"
+                fruit_price = 0.0
             else:
-                grade_color = "#E57373"
+                if grade_lower in summary:
+                    summary[grade_lower] += 1
+                    grade_color = "#66BB6A" if grade == "Good" else (
+                        "#FFB74D" if grade == "Better" else "#E57373"
+                    )
+                else:
+                    grade_color = "#E57373"
+
+                shelf_info = shelf_service.predict_shelf_life(
+                    fruit_type=fruit_type, grade=grade, defect_score=defect_score
+                )
+                market_info = market_service.recommend_market(
+                    fruit_type=fruit_type, grade=grade, defect_score=defect_score
+                )
+                shelf_life_days = shelf_info["shelf_life_days"]
+                shelf_str = f"{shelf_life_days} days"
+                market_rec_str = market_info["recommended_market"]
+                base_price = BASE_PRICES.get(fruit_type.lower(), 40.0)
+                qual_mult = QUALITY_MULTIPLIERS.get(grade, 1.0)
+                fruit_price = round(base_price * qual_mult, 2)
 
             rel_crop_path = f"storage/crops/{session_id}/{fid}.jpg"
 
@@ -231,15 +283,15 @@ class AnalysisOrchestrator:
                 "bbox": cd["bbox"],
                 "crop_path": rel_crop_path,
                 "local_crop_path": cd["crop_path"],
-                "shelf_life_days": shelf_info["shelf_life_days"],
-                "market_recommendation": market_info["recommended_market"],
+                "shelf_life_days": shelf_life_days,
+                "market_recommendation": market_rec_str,
                 "grade_color": grade_color,
                 "price": fruit_price,
                 "defect_score": defect_score,
                 "defects": grade_res.get("defects", []),
                 "fruit_name": fruit_type.capitalize(),
                 "quality": grade,
-                "shelf_life": f"{shelf_info['shelf_life_days']} days",
+                "shelf_life": shelf_str,
                 "market_value": fruit_price,
             }
             disease = grade_res.get("disease")
@@ -281,25 +333,31 @@ class AnalysisOrchestrator:
         total_count = len(fruits_data)
         good_count = sum(1 for f in fruits_data if f["grade"] == "Good")
         better_count = sum(1 for f in fruits_data if f["grade"] == "Better")
-        reject_count = sum(1 for f in fruits_data if f["grade"] == "Reject")
+        reject_count = sum(1 for f in fruits_data if f["grade"] in ["Reject", "Mismatch"])
 
         for fd in fruits_data:
             fd["count"] = total_count
 
-        score_map = {"Good": 100, "Better": 75, "Reject": 30}
-        score = round(
-            sum(score_map.get(f["grade"], 75) for f in fruits_data) / total_count
-        )
-        if score >= 90:
-            overall_grade = "Premium"
-        elif score >= 70:
-            overall_grade = "Good"
+        has_mismatch = any(f["grade"] == "Mismatch" for f in fruits_data)
+        if has_mismatch or mismatch_warning:
+            overall_grade = "Mismatch"
+            score = 0
+            avg_shelf_life = 0.0
         else:
-            overall_grade = "Reject"
+            score_map = {"Good": 100, "Better": 75, "Reject": 30}
+            score = round(
+                sum(score_map.get(f["grade"], 75) for f in fruits_data) / total_count
+            )
+            if score >= 90:
+                overall_grade = "Premium"
+            elif score >= 70:
+                overall_grade = "Good"
+            else:
+                overall_grade = "Reject"
 
-        avg_shelf_life = round(
-            sum(f["shelf_life_days"] for f in fruits_data) / total_count, 1
-        )
+            avg_shelf_life = round(
+                sum(f["shelf_life_days"] for f in fruits_data) / total_count, 1
+            )
 
         total_price = round(sum(f["price"] for f in fruits_data), 2)
         estimated_cost = total_price
@@ -318,7 +376,11 @@ class AnalysisOrchestrator:
         reject_pct = round((reject_count / total_count) * 100, 1) if total_count > 0 else 0.0
 
         ai_recommendations = []
-        if reject_count > 0:
+        if mismatch_warning or has_mismatch:
+            ai_recommendations.append(
+                mismatch_warning or f"Fruit Mismatch: Uploaded image does not appear to match '{fruit_type.capitalize()}'. Please select the matching fruit from the dropdown or upload a valid image."
+            )
+        if reject_count > 0 and not has_mismatch:
             ai_recommendations.append(
                 f"Discard rejected fruit(s) immediately to prevent cross-contamination."
             )
@@ -330,6 +392,7 @@ class AnalysisOrchestrator:
             ai_recommendations.append(
                 f"Premium quality {fruit_type.capitalize()} detected. Suitable for export or high-end retail."
             )
+
 
         try:
             annotated_img = segmentation_service.draw_segmentation(

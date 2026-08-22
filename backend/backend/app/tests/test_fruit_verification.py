@@ -30,3 +30,24 @@ def test_grapes_vs_pineapple_mismatch_verification():
     assert grade_res["grade"] == "Mismatch"
     assert "fruit_type_mismatch" in grade_res["defects"]
     assert "warning" in grade_res
+
+
+def test_auto_classification_mode():
+    """Tests that expected_fruit='auto' automatically detects fruit type without flagging mismatch."""
+    crop_strawberry = np.zeros((224, 224, 3), dtype=np.uint8)
+    crop_strawberry[:, :] = (30, 30, 220)  # Vibrant red BGR
+
+    verification = classification_service.verify_fruit(crop_strawberry, expected_fruit="auto")
+    assert verification["is_match"] is True
+    assert verification["predicted_fruit"] == "strawberry"
+
+
+def test_strawberry_vs_mango_mismatch_verification():
+    """Tests vibrant red crop (Strawberry) against expected 'mango'."""
+    crop_strawberry = np.zeros((224, 224, 3), dtype=np.uint8)
+    crop_strawberry[:, :] = (20, 20, 210)  # Bright red
+
+    verification = classification_service.verify_fruit(crop_strawberry, expected_fruit="mango")
+    assert verification["is_match"] is False
+    assert "Image Mismatch" in verification["warning"]
+

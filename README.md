@@ -126,18 +126,22 @@ dataset-{fruit}/
   Reject/     # Damaged/poor quality
 ```
 
-## API Endpoints
+## API Endpoints & App Integration
+
+For full step-by-step developer integration guides (Flutter, React Native, iOS, Android), payload schemas, and code samples, see [`APP_INTEGRATION_GUIDE.md`](APP_INTEGRATION_GUIDE.md).
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/analyze` | Upload image + fruit type, returns session_id |
-| GET | `/analysis/{session_id}` | Get full analysis results |
-| GET | `/analysis/{session_id}/status` | Poll job status |
+| POST | `/analyze` | Upload image + `fruit_type` (or `fruit_type=auto` for AI classification), returns `session_id` |
+| GET | `/analysis/{session_id}` | Get full quality analysis report & mismatch warnings |
+| GET | `/analysis/{session_id}/status` | Poll background analysis job status |
+| POST | `/scan/classify` | Instant single-crop fruit classifier endpoint |
 | GET | `/stats` | Dashboard aggregate statistics |
-| GET | `/fruits/supported` | List supported fruit types |
+| GET | `/fruits/supported` | List all 21 supported fruit & vegetable types |
 
 ## Tech Stack
 
 - **Backend**: FastAPI, SQLAlchemy (async), SQLite
 - **ML**: TensorFlow/Keras (MobileNetV2), OpenCV
 - **Frontend**: Vanilla HTML/CSS/JS
+

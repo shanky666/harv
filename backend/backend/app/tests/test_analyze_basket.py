@@ -66,23 +66,20 @@ async def test_analyze_basket_pipeline():
     with ExitStack() as stack:
         stack.enter_context(patch("app.middleware.authentication.decode_token", return_value={"sub": str(user_id), "type": "access"}))
         stack.enter_context(patch("app.middleware.authentication.get_user_by_id", return_value=mock_user))
-        stack.enter_context(patch("app.api.analyze_basket.basket_analysis_service.analyze_basket", return_value=mock_response))
+        stack.enter_context(patch("app.api.analyze_basket.analysis_orchestrator.run_analysis_job", return_value=None))
         stack.enter_context(patch("os.path.exists", return_value=True))
 
-        async with httpx.AsyncClient(app=app, base_url="http://test") as client:
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
             headers = {"Authorization": "Bearer fake_token"}
             resp = await client.post(
-                "/analyze-basket",
+                "/analyze?fruit_type=mango&is_single=true",
                 headers=headers,
                 files={"file": ("basket.jpg", b"imagebytes", "image/jpeg")}
             )
             assert resp.status_code == 200
             data = resp.json()
-            assert data["session_id"] == str(session_id)
-            assert data["total_fruits"] == 1
-            assert data["fruits"][0]["fruit_type"] == "orange"
-            assert data["fruits"][0]["grade"] == "Better"
-            assert data["summary"]["better"] == 1
+            assert data["status"] == "processing"
+            assert data["fruit_type"] == "mango"
 
 
 @pytest.mark.asyncio
@@ -103,12 +100,14 @@ async def test_get_analysis_history():
     mock_history = {
         "session_id": str(session_id),
         "total_fruits": 2,
+        "fruit_type": "mango",
         "fruits": [
             {
                 "fruit_id": "FRUIT_0001",
                 "fruit_type": "mango",
                 "grade": "Good",
                 "confidence": 0.95,
+                "grade_confidence": 0.95,
                 "bbox": [10, 20, 100, 110],
                 "crop_path": f"storage/crops/{session_id}/FRUIT_0001.jpg"
             },
@@ -117,6 +116,7 @@ async def test_get_analysis_history():
                 "fruit_type": "pomegranate",
                 "grade": "Reject",
                 "confidence": 0.89,
+                "grade_confidence": 0.89,
                 "bbox": [120, 130, 220, 230],
                 "crop_path": f"storage/crops/{session_id}/FRUIT_0002.jpg"
             }
@@ -132,9 +132,9 @@ async def test_get_analysis_history():
     with ExitStack() as stack:
         stack.enter_context(patch("app.middleware.authentication.decode_token", return_value={"sub": str(user_id), "type": "access"}))
         stack.enter_context(patch("app.middleware.authentication.get_user_by_id", return_value=mock_user))
-        stack.enter_context(patch("app.api.analyze_basket.basket_analysis_service.get_analysis_history", return_value=mock_history))
+        stack.enter_context(patch("app.api.analyze_basket.analysis_orchestrator.get_analysis_history", return_value=mock_history))
 
-        async with httpx.AsyncClient(app=app, base_url="http://test") as client:
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
             headers = {"Authorization": "Bearer fake_token"}
             resp = await client.get(f"/analysis/{session_id}", headers=headers)
             assert resp.status_code == 200
@@ -165,9 +165,9 @@ async def test_get_analysis_history_not_found():
     with ExitStack() as stack:
         stack.enter_context(patch("app.middleware.authentication.decode_token", return_value={"sub": str(user_id), "type": "access"}))
         stack.enter_context(patch("app.middleware.authentication.get_user_by_id", return_value=mock_user))
-        stack.enter_context(patch("app.api.analyze_basket.basket_analysis_service.get_analysis_history", return_value=None))
+        stack.enter_context(patch("app.api.analyze_basket.analysis_orchestrator.get_analysis_history", return_value=None))
 
-        async with httpx.AsyncClient(app=app, base_url="http://test") as client:
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
             headers = {"Authorization": "Bearer fake_token"}
             resp = await client.get(f"/analysis/{session_id}", headers=headers)
             assert resp.status_code == 404

@@ -46,7 +46,7 @@ async def analyze_fruit(
     No fruit type classification is performed.
     """
     fruit_key = fruit_type.lower().strip()
-    all_supported = SUPPORTED_FRUITS + SUPPORTED_VEGETABLES
+    all_supported = SUPPORTED_FRUITS + SUPPORTED_VEGETABLES + ["auto"]
     if fruit_key not in all_supported:
         raise HTTPException(
             status_code=400,
